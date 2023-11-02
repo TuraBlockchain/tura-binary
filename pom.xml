@@ -10,8 +10,17 @@
 		<url>https://github.com/TuraBlockchain/tura-binary</url>
 		<connection>https://github.com/TuraBlockchain/tura-binary.git</connection>
 	</scm>
-
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
 	<build>
+		<extensions>
+			<extension>
+				<groupId>io.packagecloud.maven.wagon</groupId>
+				<artifactId>maven-packagecloud-wagon</artifactId>
+				<version>0.0.6</version>
+			</extension>
+		</extensions>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -35,6 +44,32 @@
 						</manifest>
 					</archive>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>3.3.0</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.6.0</version>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
@@ -62,7 +97,16 @@
 			</snapshots>
 		</repository>
 	</repositories>
-
+	<distributionManagement>
+		<repository>
+			<id>packagecloud-nybbs2003</id>
+			<url>packagecloud+https://packagecloud.io/nybbs2003/tura</url>
+		</repository>
+		<snapshotRepository>
+			<id>packagecloud-nybbs2003</id>
+			<url>packagecloud+https://packagecloud.io/nybbs2003/tura</url>
+		</snapshotRepository>
+	</distributionManagement>
 	<dependencies>
 		<dependency>
 			<groupId>com.formdev</groupId>
