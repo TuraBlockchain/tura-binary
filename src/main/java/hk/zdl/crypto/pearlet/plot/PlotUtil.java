@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Random;
 import java.util.zip.ZipFile;
@@ -21,14 +22,16 @@ import com.formdev.flatlaf.util.SystemInfo;
 public class PlotUtil {
 
 	public static void do_plot(Path dir, String id, long nounce, PlotProgressListener listener, String... mem_usage) throws Exception {
+		var output_file = new LinkedList<Path>();
 		var plotter_bin_path = copy_plotter().toPath();
-		var proc = PlotUtil.plot(plotter_bin_path, dir, false, new BigInteger(id), Math.abs(new Random().nextInt()), nounce, listener, mem_usage);
+		var proc = PlotUtil.plot(plotter_bin_path, dir, false, new BigInteger(id), Math.abs(new Random().nextInt()), nounce, listener, output_file, mem_usage);
 		int i = proc.waitFor();
 		if (i != 0) {
+			output_file.stream().map(p->p.toFile()).forEach(File::delete);
 			var err_info = IOUtils.readLines(proc.getErrorStream(), Charset.defaultCharset()).stream().reduce("", (a, b) -> a + "\n" + b).trim();
 			throw new IOException(err_info);
 		}
-		Files.deleteIfExists(plotter_bin_path);
+		plotter_bin_path.toFile().delete();
 	}
 
 	private static File copy_plotter() throws IOException {
@@ -69,7 +72,8 @@ public class PlotUtil {
 		return tmp_file;
 	}
 
-	public static final Process plot(Path plot_bin, Path target, boolean benchmark, BigInteger id, long start_nonce, long nonces, PlotProgressListener listener, String... mem_usage) throws Exception {
+	public static final Process plot(Path plot_bin, Path target, boolean benchmark, BigInteger id, long start_nonce, long nonces, PlotProgressListener listener, Collection<Path> output_file,
+			String... mem_usage) throws Exception {
 		if (mem_usage == null || mem_usage.length < 1) {
 			mem_usage = new String[] { "1GiB" };
 		}
@@ -124,15 +128,14 @@ public class PlotUtil {
 				throw new IOException(line.substring("Error: ".length()));
 			} else if (line.equals("Starting plotting...")) {
 				continue;
+			} else if (line.startsWith("Output File: ")) {
+				line = line.substring(line.indexOf(':') + 1).trim();
+				output_file.add(Paths.get(line));
 			} else {
-				if (line.isEmpty() || line.equals("[2A")) {
-					continue;
-				} else {
-					if (line.contains("鈹傗")) {
-						byte[] bArr = line.getBytes("GBK");
-						line = new String(bArr, "UTF-8");
-						line = line.replace("�?", "│");
-					}
+				if (line.contains("鈹傗")) {
+					byte[] bArr = line.getBytes("GBK");
+					line = new String(bArr, "UTF-8");
+					line = line.replace("�?", "│");
 				}
 				if (line.startsWith("Hashing:") || line.startsWith("Writing:")) {
 					PlotProgressListener.Type type = line.startsWith("H") ? PlotProgressListener.Type.HASH : PlotProgressListener.Type.WRIT;
